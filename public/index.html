@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Matchmaking desk</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body><main><h1>Matchmaking desk</h1><p>A small 1v1 ladder. Register players, build a queue, and record results.</p>
+<section><label>Operator API token <input id="token" type="password" autocomplete="off"></label><small>The token stays in this page’s memory. Use a trusted device.</small><button id="refresh">Connect / refresh</button></section>
+<p id="status" role="status"></p>
+<section><h2>Players</h2><form id="register"><label>Display name <input name="name" maxlength="32" required></label><button>Register</button></form><pre id="players">Connect to load rankings.</pre></section>
+<section><h2>Queue</h2><form id="queue-form"><label>Player ID <input name="playerId" type="number" min="1" required></label><button name="action" value="join">Join queue</button><button name="action" value="leave">Leave queue</button></form><button id="make">Make compatible matches</button><pre id="queue"></pre></section>
+<section><h2>Matches</h2><form id="result"><label>Match ID <input name="matchId" type="number" min="1" required></label><label>Winner player ID (blank = draw) <input name="winnerId" type="number" min="1"></label><button name="action" value="result">Record result</button><button name="action" value="cancel">Cancel match</button></form><pre id="matches"></pre></section>
+<section><h2>Player history</h2><form id="history"><label>Player ID <input name="playerId" type="number" min="1" required></label><button>View statistics and history</button></form><pre id="history-output"></pre></section>
+</main></body></html>
