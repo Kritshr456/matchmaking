@@ -76,3 +76,6 @@ npm audit --omit=dev
 
 Tests cover matching and queue restrictions, tolerance growth, Elo, duplicate
 results, validation, file persistence and a real HTTP registration-to-result flow.
+
+HTTP security tests also exercise bearer authentication, JSON and content-type
+validation, oversized request rejection, security headers and rate limits.
