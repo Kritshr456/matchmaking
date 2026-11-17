@@ -5,6 +5,8 @@ export class HttpError extends Error {
   constructor(status,message){super(message);this.status=status;}
 }
 export function positiveId(value){
+  if(typeof value!=='number' && !(typeof value==='string' && /^[1-9]\d*$/.test(value)))
+    throw new HttpError(400,'Invalid ID.');
   const n=Number(value);if(!Number.isSafeInteger(n)||n<1)throw new HttpError(400,'Invalid ID.');return n;
 }
 export function text(value,max=64){
@@ -41,7 +43,7 @@ export function createServer({token,route,publicDir}){
       if(supplied.length!==expected.length||!timingSafeEqual(supplied,expected))throw new HttpError(401,'A valid bearer token is required.');
       let body={};
       if(['POST','PUT','PATCH','DELETE'].includes(req.method)){
-        if(!(req.headers['content-type']||'').startsWith('application/json'))throw new HttpError(415,'Use application/json.');
+        if((req.headers['content-type']||'').split(';')[0].trim().toLowerCase()!=='application/json')throw new HttpError(415,'Use application/json.');
         let size=0;const chunks=[];
         for await(const chunk of req){size+=chunk.length;if(size>16384)throw new HttpError(413,'Request body exceeds 16 KB.');chunks.push(chunk);}
         try{body=JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}');}catch{throw new HttpError(400,'Invalid JSON.');}
