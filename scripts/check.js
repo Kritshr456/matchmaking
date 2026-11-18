@@ -11,7 +11,7 @@ function files(directory) {
     return entry.isDirectory() ? files(path) : entry.name.endsWith('.js') ? [path] : [];
   });
 }
-const paths = ['src', 'public', 'test', 'scripts'].flatMap(name => files(join(root, name)));
+const paths = [join(root,'playwright.config.js'), ...['src', 'public', 'test', 'scripts', 'e2e'].flatMap(name => files(join(root, name)))];
 for (const path of paths) {
   const result = spawnSync(process.execPath, ['--check', path], { stdio: 'inherit' });
   if (result.error) throw result.error;

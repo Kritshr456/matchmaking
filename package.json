@@ -1,6 +1,6 @@
 {
   "name": "matchmaking",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "description": "Rating-based player queues and match reporting",
   "type": "module",
@@ -10,8 +10,11 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "check": "node scripts/check.js"
+    "check": "node scripts/check.js",
+    "test:browser": "playwright test"
   },
   "license": "MIT",
-  "dependencies": {}
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
 }

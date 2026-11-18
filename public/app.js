@@ -26,7 +26,14 @@ async function refresh(){
  $('preview').replaceChildren();
  table('matches',['Match','Side A','Side B','Status','Winner','Elo A / B','Created'],matches(history));
 }
-async function run(fn){try{const message=await fn();$('status').textContent=message||'Saved / refreshed.';}catch(error){$('status').textContent=error.message;}}
+let busy=false;
+async function run(fn){
+ if(busy)return;busy=true;$('status').textContent='Working…';
+ for(const button of document.querySelectorAll('button'))button.disabled=true;
+ try{const message=await fn();$('status').textContent=message||'Saved / refreshed.';}
+ catch(error){$('status').textContent=error.message;}
+ finally{busy=false;for(const button of document.querySelectorAll('button'))button.disabled=false;}
+}
 $('refresh').onclick=()=>run(refresh);
 $('register').onsubmit=e=>{e.preventDefault();run(async()=>{await api('players',{name:new FormData(e.target).get('name')});e.target.reset();await refresh();});};
 $('queue-form').onsubmit=e=>{e.preventDefault();const id=Number(new FormData(e.target).get('playerId'));run(async()=>{await api(`queue/${e.submitter.value}`,{playerId:id});await refresh();});};

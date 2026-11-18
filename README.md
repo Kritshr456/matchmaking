@@ -107,3 +107,14 @@ contains `generatedAt` and `pairs`, with player IDs, ratings, rating gaps and wa
 times. The same selection logic is used by match creation. Preview does not reserve
 players: a later create request recalculates pairs against the current queue and
 clock. Refreshing the dashboard clears old preview results.
+
+## Browser regression checks
+
+`npm run test:browser` drives the real dashboard, API and an isolated temporary
+SQLite database. It covers preview-to-result, availability and pending-match
+protection, preserved history, HTML-like names, authentication and a phone viewport.
+Run `npx playwright install chromium` first, or set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium executable. The
+test server uses loopback port 4187 (override BROWSER_TEST_PORT) and a public
+test-only token. It never opens the production database. Browser artifacts are
+ignored by Git. The dashboard disables action buttons while a request is pending.

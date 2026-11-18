@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
+
+- Add real browser regression tests for pairing, availability and mobile access.
+- Show pending actions and prevent overlapping dashboard submissions.
+- Back up and restart after updating. Player availability is added automatically; no ratings or history are reset.
 
 - Preview compatible pairings without changing the queue, using the same selection rules as match creation.
 - Keep match-creation counts visible in dashboard status messages.
