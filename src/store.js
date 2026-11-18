@@ -10,11 +10,13 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
   const db=new DatabaseSync(path);
   db.exec(`PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS players(id INTEGER PRIMARY KEY,name TEXT UNIQUE COLLATE NOCASE NOT NULL,
-      rating INTEGER NOT NULL DEFAULT 1000,wins INTEGER NOT NULL DEFAULT 0,losses INTEGER NOT NULL DEFAULT 0,draws INTEGER NOT NULL DEFAULT 0);
+      rating INTEGER NOT NULL DEFAULT 1000,wins INTEGER NOT NULL DEFAULT 0,losses INTEGER NOT NULL DEFAULT 0,draws INTEGER NOT NULL DEFAULT 0,active INTEGER NOT NULL DEFAULT 1);
     CREATE TABLE IF NOT EXISTS queue(player INTEGER PRIMARY KEY REFERENCES players(id),joined INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS matches(id INTEGER PRIMARY KEY,a INTEGER NOT NULL REFERENCES players(id),b INTEGER NOT NULL REFERENCES players(id),
       status TEXT NOT NULL DEFAULT 'pending',winner INTEGER REFERENCES players(id),delta INTEGER,
       rating_a INTEGER NOT NULL,rating_b INTEGER NOT NULL,created INTEGER NOT NULL,finished INTEGER);`);
+  if(!db.prepare('PRAGMA table_info(players)').all().some(column=>column.name==='active'))
+    db.exec('ALTER TABLE players ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
   const transaction=fn=>{db.exec('BEGIN IMMEDIATE');try{const value=fn();db.exec('COMMIT');return value;}catch(error){db.exec('ROLLBACK');throw error;}};
   const player=id=>{const p=db.prepare('SELECT * FROM players WHERE id=?').get(positiveId(id));if(!p)throw new HttpError(404,'Player not found.');return p;};
   const match=id=>{const m=db.prepare('SELECT * FROM matches WHERE id=?').get(positiveId(id));if(!m)throw new HttpError(404,'Match not found.');return m;};
@@ -26,7 +28,16 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
       if(db.prepare('SELECT 1 FROM players WHERE name=? COLLATE NOCASE').get(name))throw new HttpError(409,'That player name is already registered.');
       return player(Number(db.prepare('INSERT INTO players(name) VALUES(?)').run(name).lastInsertRowid));
     },
-    join(id){return transaction(()=>{const p=player(id);if(active(p.id))throw new HttpError(409,'Finish or cancel the active match first.');if(db.prepare('SELECT 1 FROM queue WHERE player=?').get(p.id))throw new HttpError(409,'Player is already queued.');db.prepare('INSERT INTO queue VALUES(?,?)').run(p.id,clock());return p;});},
+    setActive(id,enabled){return transaction(()=>{
+      if(typeof enabled!=='boolean')throw new HttpError(400,'Active must be true or false.');
+      const p=player(id);
+      if(!enabled&&active(p.id))throw new HttpError(409,'Finish or cancel the active match before deactivating this player.');
+      if(!enabled)db.prepare('DELETE FROM queue WHERE player=?').run(p.id);
+      db.prepare('UPDATE players SET active=? WHERE id=?').run(enabled?1:0,p.id);
+      return player(p.id);
+    });},
+    inactive:()=>db.prepare('SELECT * FROM players WHERE active=0 ORDER BY id DESC LIMIT 100').all(),
+    join(id){return transaction(()=>{const p=player(id);if(!p.active)throw new HttpError(409,'This player is inactive. Restore them before joining the queue.');if(active(p.id))throw new HttpError(409,'Finish or cancel the active match first.');if(db.prepare('SELECT 1 FROM queue WHERE player=?').get(p.id))throw new HttpError(409,'Player is already queued.');db.prepare('INSERT INTO queue VALUES(?,?)').run(p.id,clock());return p;});},
     leave(id){player(id);db.prepare('DELETE FROM queue WHERE player=?').run(Number(id));return {left:true};},
     queue:()=>db.prepare('SELECT p.*,q.joined FROM queue q JOIN players p ON p.id=q.player ORDER BY q.joined,p.id').all(),
     make(){return transaction(()=>{
@@ -57,7 +68,7 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
       return match(m.id);
     });},
     cancel(id){return transaction(()=>{const m=match(id);if(m.status!=='pending')throw new HttpError(409,'Only pending matches can be cancelled.');db.prepare("UPDATE matches SET status='cancelled',finished=? WHERE id=?").run(clock(),m.id);return match(m.id);});},
-    rankings:()=>db.prepare('SELECT *,wins+losses+draws AS played FROM players ORDER BY rating DESC,wins DESC,id LIMIT 100').all(),
+    rankings:()=>db.prepare('SELECT *,wins+losses+draws AS played FROM players WHERE active=1 ORDER BY rating DESC,wins DESC,id LIMIT 100').all(),
     history(id){player(id);return db.prepare('SELECT * FROM matches WHERE a=? OR b=? ORDER BY id DESC LIMIT 50').all(Number(id),Number(id));},
     recent:()=>db.prepare('SELECT * FROM matches ORDER BY id DESC LIMIT 100').all(),
   };

@@ -85,3 +85,16 @@ validation, oversized request rejection, security headers and rate limits.
 Run `git pull --ff-only` and `npm ci`, then restart the service.
 See [CHANGELOG.md](CHANGELOG.md) for the latest behavior changes. This update
 does not require a database migration.
+
+## Player availability
+
+Operators can deactivate or restore a player from the dashboard, or POST
+`/api/players/:id/status` with `{ "active": false }` / `{ "active": true }`.
+Deactivation removes a queued entry atomically and hides the player from the
+rankings. Pending matches must finish or be cancelled first. Inactive players
+cannot queue. Ratings, statistics, names and match history are retained, and
+restoring does not reset them or automatically requeue the player.
+GET `/api/players/inactive` lists up to 100 inactive players; history remains
+available through `/api/players/:id`. All endpoints require the operator token.
+Back up before upgrading. Existing players are made active during the automatic
+upgrade; restore the backup to roll back to a release without availability flags.

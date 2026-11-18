@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add player deactivation/restoration with queue cleanup, pending-match protection and preserved ratings/history.
+
 ## 1.0.2
 
 - Reject coercible player and match IDs such as booleans, arrays and noncanonical numeric strings.

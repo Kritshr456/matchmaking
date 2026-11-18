@@ -18,9 +18,10 @@ function table(target,headers,rows){
 const name=id=>playerNames.has(id)?`${playerNames.get(id)} (#${id})`:`#${id}`;
 const matches=rows=>rows.map(m=>[m.id,name(m.a),name(m.b),m.status,m.status==='completed'?(m.winner?name(m.winner):'Draw'):'—',m.delta===null?'—':`${m.delta>=0?'+':''}${m.delta} / ${m.delta<=0?'+':''}${-m.delta}`,new Date(m.created).toLocaleString()]);
 async function refresh(){
- const [players,queue,history]=await Promise.all([api('players'),api('queue'),api('matches')]);
- playerNames=new Map(players.map(p=>[p.id,p.name]));for(const p of queue)playerNames.set(p.id,p.name);
+ const [players,queue,history,inactive]=await Promise.all([api('players'),api('queue'),api('matches'),api('players/inactive')]);
+ playerNames=new Map([...players,...inactive].map(p=>[p.id,p.name]));for(const p of queue)playerNames.set(p.id,p.name);
  table('players',['Rank','ID','Player','Rating','Wins','Losses','Draws','Played'],players.map((p,index)=>[index+1,p.id,p.name,p.rating,p.wins,p.losses,p.draws,p.played]));
+ table('inactive',['ID','Inactive player','Rating','Wins','Losses','Draws'],inactive.map(p=>[p.id,p.name,p.rating,p.wins,p.losses,p.draws]));
  table('queue',['ID','Player','Rating','Waiting'],queue.map(p=>[p.id,p.name,p.rating,`${Math.max(0,Math.floor((Date.now()-p.joined)/1000))}s`]));
  table('matches',['Match','Side A','Side B','Status','Winner','Elo A / B','Created'],matches(history));
 }
@@ -36,3 +37,8 @@ $('history').onsubmit=e=>{e.preventDefault();run(async()=>{
  $('player-summary').textContent=`${player.name} • ${player.rating} Elo • ${player.wins} wins / ${player.losses} losses / ${player.draws} draws`;
  table('history-output',['Match','Side A','Side B','Status','Winner','Elo A / B','Created'],matches(history));
 });};
+
+$('player-status').onsubmit=e=>{
+ e.preventDefault();const f=new FormData(e.target),active=e.submitter.value==='restore';
+ run(async()=>{await api(`players/${Number(f.get('playerId'))}/status`,{active});await refresh();});
+};
