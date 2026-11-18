@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- Select the closest compatible opponent without allocating and sorting a candidate list for each queued player.
+- Preserve oldest-player priority, rating tolerance and queue-time/ID tie breaking.
+- Add equal-gap tie and already-paired opponent regression coverage.
+
 ## 1.1.0
 
 - Add real browser regression tests for pairing, availability and mobile access.

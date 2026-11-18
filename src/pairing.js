@@ -4,8 +4,15 @@ export function selectPairs(queue, now) {
   for (const a of ordered) {
     if (used.has(a.id)) continue;
     const tolerance = Math.min(600,100+Math.floor(Math.max(0,now-a.joined)/30000)*50);
-    const b = ordered.filter(p=>p.id!==a.id&&!used.has(p.id)&&Math.abs(a.rating-p.rating)<=tolerance)
-      .sort((x,y)=>Math.abs(a.rating-x.rating)-Math.abs(a.rating-y.rating)||x.joined-y.joined||x.id-y.id)[0];
+    let b, closestGap = Infinity;
+    for (const candidate of ordered) {
+      if (candidate.id === a.id || used.has(candidate.id)) continue;
+      const gap = Math.abs(a.rating - candidate.rating);
+      if (gap <= tolerance && gap < closestGap) {
+        b = candidate;
+        closestGap = gap;
+      }
+    }
     if (!b) continue;
     used.add(a.id); used.add(b.id); pairs.push({a,b});
   }
