@@ -119,3 +119,7 @@ Run `npx playwright install chromium` first, or set
 test server uses loopback port 4187 (override BROWSER_TEST_PORT) and a public
 test-only token. It never opens the production database. Browser artifacts are
 ignored by Git. The dashboard disables action buttons while a request is pending.
+
+Oversized declared request bodies are rejected from their headers before upload
+bytes are accepted. Streaming bodies remain limited to 16 KB. A 413 response
+explicitly closes the connection rather than advertising reuse for an unfinished upload.

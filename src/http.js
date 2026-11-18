@@ -44,6 +44,7 @@ export function createServer({token,route,publicDir}){
       let body={};
       if(['POST','PUT','PATCH','DELETE'].includes(req.method)){
         if((req.headers['content-type']||'').split(';')[0].trim().toLowerCase()!=='application/json')throw new HttpError(415,'Use application/json.');
+        if(Number(req.headers['content-length'])>16384)throw new HttpError(413,'Request body exceeds 16 KB.');
         let size=0;const chunks=[];
         for await(const chunk of req){size+=chunk.length;if(size>16384)throw new HttpError(413,'Request body exceeds 16 KB.');chunks.push(chunk);}
         try{body=JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}');}catch{throw new HttpError(400,'Invalid JSON.');}
@@ -54,6 +55,7 @@ export function createServer({token,route,publicDir}){
       send(200,result);
     }catch(error){
       const status=error.status||500;
+      if(status===413){res.setHeader('Connection','close');req.resume();}
       if(status===500)console.error('Request failed',{code:error.code||'unknown'});
       if(!res.headersSent&&!res.destroyed)send(status,{error:status===500?'Internal server error.':error.message});
     }

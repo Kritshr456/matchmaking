@@ -1,6 +1,6 @@
 {
   "name": "matchmaking",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "description": "Rating-based player queues and match reporting",
   "type": "module",

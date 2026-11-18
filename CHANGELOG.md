@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+
+- Reject oversized Content-Length headers before accepting uploads, and explicitly close connections after streaming-limit rejections.
+
 ## 1.1.1
 
 - Select the closest compatible opponent without allocating and sorting a candidate list for each queued player.
