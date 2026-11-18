@@ -31,3 +31,25 @@ test('preview endpoint requires authentication and does not create matches',asyn
   assert.equal((await response.json()).pairs.length,1);assert.equal(s.recent().length,0);assert.equal(s.queue().length,2);
  }finally{await new Promise(resolve=>app.close(resolve));s.close();}
 });
+
+test('equal rating gaps prefer queue time then ID regardless of input order', () => {
+ const queue = [
+  { id: 4, joined: 2, rating: 1050 },
+  { id: 3, joined: 1, rating: 950 },
+  { id: 2, joined: 1, rating: 1050 },
+  { id: 1, joined: 0, rating: 1000 },
+ ];
+ assert.deepEqual(selectPairs(queue, 10).map(({a,b}) => [a.id,b.id]), [[1,2],[3,4]]);
+ assert.deepEqual(queue.map(p => p.id), [4,3,2,1]);
+});
+
+test('opponents already selected are skipped and incompatible players remain queued', () => {
+ const queue = [
+  { id: 1, joined: 0, rating: 1000 },
+  { id: 2, joined: 1, rating: 1001 },
+  { id: 3, joined: 2, rating: 1002 },
+  { id: 4, joined: 3, rating: 1003 },
+  { id: 5, joined: 4, rating: 2000 },
+ ];
+ assert.deepEqual(selectPairs(queue, 10).map(({a,b}) => [a.id,b.id]), [[1,2],[3,4]]);
+});

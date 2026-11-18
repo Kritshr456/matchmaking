@@ -30,7 +30,8 @@ result. It does not provide individual player accounts or self-service reporting
 The oldest queued player is considered first. Their initial rating window is
 100 points; every 30 seconds it widens by 50, up to 600. The closest available
 opponent inside that window is chosen, with queue time and ID breaking ties.
-Players beyond the maximum window remain queued. Matchmaking runs when requested,
+Opponent selection scans candidates in queue order, avoiding a separate sort per
+player. Players beyond the maximum window remain queued. Matchmaking runs when requested,
 not on a timer. A player cannot queue while already in a pending match.
 
 New players start at 1000. Ratings use Elo with K=32, rounded to integer points.
