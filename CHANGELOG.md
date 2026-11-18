@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preview compatible pairings without changing the queue, using the same selection rules as match creation.
+- Keep match-creation counts visible in dashboard status messages.
+
 - Add player deactivation/restoration with queue cleanup, pending-match protection and preserved ratings/history.
 
 ## 1.0.2

@@ -7,6 +7,7 @@ export function createApp(store,token){
     if(method==='GET'&&path==='/api/queue')return store.queue();
     if(method==='POST'&&path==='/api/queue/join')return store.join(positiveId(body.playerId));
     if(method==='POST'&&path==='/api/queue/leave')return store.leave(positiveId(body.playerId));
+    if(method==='GET'&&path==='/api/matches/preview')return store.preview();
     if(method==='GET'&&path==='/api/matches')return store.recent();
     if(method==='POST'&&path==='/api/matches/make')return store.make();
     let match=path.match(/^\/api\/matches\/(\d+)\/(result|cancel)$/);

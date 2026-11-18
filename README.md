@@ -98,3 +98,12 @@ GET `/api/players/inactive` lists up to 100 inactive players; history remains
 available through `/api/players/:id`. All endpoints require the operator token.
 Back up before upgrading. Existing players are made active during the automatic
 upgrade; restore the backup to roll back to a release without availability flags.
+
+## Pairing preview
+
+Click **Preview compatible pairs**, or GET `/api/matches/preview`, to inspect
+compatible pairs without removing queue entries or creating matches. The response
+contains `generatedAt` and `pairs`, with player IDs, ratings, rating gaps and wait
+times. The same selection logic is used by match creation. Preview does not reserve
+players: a later create request recalculates pairs against the current queue and
+clock. Refreshing the dashboard clears old preview results.

@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { HttpError, text, positiveId } from './http.js';
+import { selectPairs } from './pairing.js';
 export function ratingChange(a,b,score){
   return Math.round(32*(score-1/(1+10**((b-a)/400))));
 }
@@ -40,18 +41,17 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
     join(id){return transaction(()=>{const p=player(id);if(!p.active)throw new HttpError(409,'This player is inactive. Restore them before joining the queue.');if(active(p.id))throw new HttpError(409,'Finish or cancel the active match first.');if(db.prepare('SELECT 1 FROM queue WHERE player=?').get(p.id))throw new HttpError(409,'Player is already queued.');db.prepare('INSERT INTO queue VALUES(?,?)').run(p.id,clock());return p;});},
     leave(id){player(id);db.prepare('DELETE FROM queue WHERE player=?').run(Number(id));return {left:true};},
     queue:()=>db.prepare('SELECT p.*,q.joined FROM queue q JOIN players p ON p.id=q.player ORDER BY q.joined,p.id').all(),
+    preview(){
+      const now=clock();
+      return {generatedAt:now,pairs:selectPairs(this.queue(),now).map(({a,b})=>({a:a.id,b:b.id,rating_a:a.rating,rating_b:b.rating,
+        rating_gap:Math.abs(a.rating-b.rating),waiting_a_ms:Math.max(0,now-a.joined),waiting_b_ms:Math.max(0,now-b.joined)}))};
+    },
     make(){return transaction(()=>{
-      const queue=this.queue();const matches=[];const used=new Set();const now=clock();
-      for(const a of queue){
-        if(used.has(a.id))continue;
-        // Older entries widen their rating window; closest compatible opponent wins.
-        const tolerance=Math.min(600,100+Math.floor(Math.max(0,now-a.joined)/30000)*50);
-        const candidates=queue.filter(b=>b.id!==a.id&&!used.has(b.id)&&Math.abs(a.rating-b.rating)<=tolerance)
-          .sort((x,y)=>Math.abs(a.rating-x.rating)-Math.abs(a.rating-y.rating)||x.joined-y.joined||x.id-y.id);
-        const b=candidates[0];if(!b)continue;
+      const now=clock(),matches=[];
+      for(const {a,b} of selectPairs(this.queue(),now)){
         const id=Number(db.prepare('INSERT INTO matches(a,b,rating_a,rating_b,created) VALUES(?,?,?,?,?)').run(a.id,b.id,a.rating,b.rating,now).lastInsertRowid);
         db.prepare('DELETE FROM queue WHERE player IN (?,?)').run(a.id,b.id);
-        used.add(a.id);used.add(b.id);matches.push(match(id));
+        matches.push(match(id));
       }
       return matches;
     });},

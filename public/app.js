@@ -23,13 +23,14 @@ async function refresh(){
  table('players',['Rank','ID','Player','Rating','Wins','Losses','Draws','Played'],players.map((p,index)=>[index+1,p.id,p.name,p.rating,p.wins,p.losses,p.draws,p.played]));
  table('inactive',['ID','Inactive player','Rating','Wins','Losses','Draws'],inactive.map(p=>[p.id,p.name,p.rating,p.wins,p.losses,p.draws]));
  table('queue',['ID','Player','Rating','Waiting'],queue.map(p=>[p.id,p.name,p.rating,`${Math.max(0,Math.floor((Date.now()-p.joined)/1000))}s`]));
+ $('preview').replaceChildren();
  table('matches',['Match','Side A','Side B','Status','Winner','Elo A / B','Created'],matches(history));
 }
-async function run(fn){try{await fn();$('status').textContent='Saved / refreshed.';}catch(error){$('status').textContent=error.message;}}
+async function run(fn){try{const message=await fn();$('status').textContent=message||'Saved / refreshed.';}catch(error){$('status').textContent=error.message;}}
 $('refresh').onclick=()=>run(refresh);
 $('register').onsubmit=e=>{e.preventDefault();run(async()=>{await api('players',{name:new FormData(e.target).get('name')});e.target.reset();await refresh();});};
 $('queue-form').onsubmit=e=>{e.preventDefault();const id=Number(new FormData(e.target).get('playerId'));run(async()=>{await api(`queue/${e.submitter.value}`,{playerId:id});await refresh();});};
-$('make').onclick=()=>run(async()=>{const created=await api('matches/make',{});await refresh();$('status').textContent=`Created ${created.length} match(es).`;});
+$('make').onclick=()=>run(async()=>{const created=await api('matches/make',{});await refresh();return `Created ${created.length} match(es).`;});
 $('result').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target);run(async()=>{await api(`matches/${Number(f.get('matchId'))}/${e.submitter.value}`,{winnerId:f.get('winnerId')?Number(f.get('winnerId')):null});await refresh();});};
 $('history').onsubmit=e=>{e.preventDefault();run(async()=>{
  const {player,matches:history}=await api(`players/${Number(new FormData(e.target).get('playerId'))}`);
@@ -42,3 +43,9 @@ $('player-status').onsubmit=e=>{
  e.preventDefault();const f=new FormData(e.target),active=e.submitter.value==='restore';
  run(async()=>{await api(`players/${Number(f.get('playerId'))}/status`,{active});await refresh();});
 };
+
+$('preview-matches').onclick=()=>run(async()=>{
+ const preview=await api('matches/preview');
+ table('preview',['Side A','Rating A','Side B','Rating B','Rating gap'],preview.pairs.map(p=>[name(p.a),p.rating_a,name(p.b),p.rating_b,p.rating_gap]));
+ return `Preview: ${preview.pairs.length} compatible pair(s). No matches created.`;
+});
