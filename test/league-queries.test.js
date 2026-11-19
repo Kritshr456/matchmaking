@@ -73,3 +73,26 @@ test('league queries enforce authentication and validate URL filters',async()=>{
   assert.equal((await get('/api/standings?q=A')).status,200);assert.equal((await get('/api/profiles/1')).status,200);
  }finally{await new Promise(resolve=>app.close(resolve));s.close();}
 });
+
+test('profiles distinguish queued players from pending matches',()=>{
+ const s=openStore();try{
+  const a=s.register('A'),b=s.register('B');
+  assert.equal(s.profile(a.id).queueEntry,null);assert.equal(s.profile(a.id).pendingMatch,null);
+  s.join(a.id);assert.equal(typeof s.profile(a.id).queueEntry.joined,'number');
+  s.join(b.id);const m=s.make()[0];assert.equal(s.profile(a.id).queueEntry,null);assert.equal(s.profile(a.id).pendingMatch,m.id);
+  s.cancel(m.id);assert.equal(s.profile(a.id).pendingMatch,null);
+ }finally{s.close();}
+});
+
+test('console and match detail expose authenticated consistent league data',async()=>{
+ const s=openStore(),token='console-test-only-token-'.repeat(3),app=createApp(s,token);
+ const a=s.register('A'),b=s.register('B');s.join(a.id);s.join(b.id);const m=s.make()[0];
+ await new Promise(resolve=>app.listen(0,'127.0.0.1',resolve));const base=`http://127.0.0.1:${app.address().port}`;
+ const get=path=>fetch(base+path,{headers:{Authorization:`Bearer ${token}`}});
+ try{
+  for(const path of ['/api/console',`/api/matches/${m.id}`])assert.equal((await fetch(base+path)).status,401);
+  const view=await (await get('/api/console')).json();assert.equal(view.overview.counts.pending,1);assert.equal(view.pendingMatches[0].id,m.id);assert.equal(view.seasons[0].id,view.overview.season.id);
+  const detail=await (await get(`/api/matches/${m.id}`)).json();assert.equal(detail.a_name,'A');assert.equal(detail.b_name,'B');assert.equal(detail.season_name,'Season 1');
+  assert.equal((await get('/api/matches/999')).status,404);
+ }finally{await new Promise(resolve=>app.close(resolve));s.close();}
+});

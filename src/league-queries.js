@@ -68,7 +68,9 @@ export function createLeagueQueries(db, clock, { player, season, currentSeason }
       CASE WHEN a=? THEN rating_a+delta ELSE rating_b-delta END AS rating
       FROM matches WHERE season_id=? AND status='completed' AND (a=? OR b=?) ORDER BY id DESC LIMIT 30`)
       .all(p.id, p.id, active.id, p.id, p.id).reverse();
-    return { player: p, currentSeason: active, lifetime, seasons, ratingTrail, history: matchHistory({ playerId: p.id, page }) };
+    const queueEntry = db.prepare('SELECT joined FROM queue WHERE player=?').get(p.id) || null;
+    const pendingMatch = db.prepare("SELECT id FROM matches WHERE status='pending' AND (a=? OR b=?)").get(p.id, p.id)?.id || null;
+    return { player: p, currentSeason: active, lifetime, seasons, ratingTrail, queueEntry, pendingMatch, history: matchHistory({ playerId: p.id, page }) };
   }
   return { standings, matchHistory, overview, profile };
 }

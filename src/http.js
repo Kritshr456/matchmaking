@@ -18,7 +18,7 @@ export function createServer({token,route,publicDir}){
   if(typeof token!=='string'||token.length<32)throw Error('API_TOKEN must contain at least 32 characters.');
   const expected=Buffer.from(`Bearer ${token}`);
   const buckets=new Map();
-  const files={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
+  const files={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/views.js':['views.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
   const server=http.createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');
     res.setHeader('Referrer-Policy','no-referrer');

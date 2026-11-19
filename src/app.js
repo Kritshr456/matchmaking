@@ -7,6 +7,7 @@ export function createApp(store,token){
       if(all&&value==='all')return null;
       return !value||value==='current'?store.currentSeason().id:positiveId(value);
     };
+    if(method==='GET'&&path==='/api/console')return {overview:store.overview(),seasons:store.seasons(),queue:store.queue(),pendingMatches:store.matchHistory({seasonId:store.currentSeason().id,status:'pending'}).rows};
     if(method==='GET'&&path==='/api/overview')return store.overview();
     if(method==='GET'&&path==='/api/standings'){
       const inactive=query.get('inactive')||'false';
@@ -27,6 +28,8 @@ export function createApp(store,token){
     if(method==='GET'&&path==='/api/matches/preview')return store.preview();
     if(method==='GET'&&path==='/api/matches')return store.recent();
     if(method==='POST'&&path==='/api/matches/make')return store.make();
+    const detail=path.match(/^\/api\/matches\/(\d+)$/);
+    if(method==='GET'&&detail){const m=store.match(positiveId(detail[1]));return {...m,a_name:store.player(m.a).name,b_name:store.player(m.b).name,season_name:store.season(m.season_id).name};}
     let match=path.match(/^\/api\/matches\/(\d+)\/(result|cancel)$/);
     if(method==='POST'&&match)return match[2]==='result'?store.result(positiveId(match[1]),body.winnerId):store.cancel(positiveId(match[1]));
     match=path.match(/^\/api\/players\/(\d+)\/status$/);

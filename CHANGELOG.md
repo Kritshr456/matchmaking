@@ -1,9 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.2.0
+
+- Replace the single-page desk with a responsive league console: overview, players, queue, matches and seasons.
+- Add explicit outcome selection, match details, rating charts, read-only archived rosters and connection cleanup.
+- Cover seven isolated browser flows, including season rollover, stale requests, pagination and mobile access.
+- Back up before updating. The automatic migration preserves existing ratings and history; only explicit season rollover resets current standings.
 
 - Add searchable, paginated season standings, filtered match history, player profiles and league overview metrics.
-
 - Add transactional season rollover with archived standings, preserved player availability and stale-request protection.
 - Automatically import existing leagues without resetting ratings or inventing a legacy start date.
 
