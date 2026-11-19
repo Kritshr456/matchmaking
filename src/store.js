@@ -3,27 +3,23 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { HttpError, text, positiveId } from './http.js';
 import { selectPairs } from './pairing.js';
+import { migrate } from './migrations.js';
+import { createSeasons } from './seasons.js';
 export function ratingChange(a,b,score){
   return Math.round(32*(score-1/(1+10**((b-a)/400))));
 }
 export function openStore(path=':memory:',clock=()=>Date.now()){
   if(path!==':memory:')mkdirSync(dirname(path),{recursive:true,mode:0o700});
   const db=new DatabaseSync(path);
-  db.exec(`PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
-    CREATE TABLE IF NOT EXISTS players(id INTEGER PRIMARY KEY,name TEXT UNIQUE COLLATE NOCASE NOT NULL,
-      rating INTEGER NOT NULL DEFAULT 1000,wins INTEGER NOT NULL DEFAULT 0,losses INTEGER NOT NULL DEFAULT 0,draws INTEGER NOT NULL DEFAULT 0,active INTEGER NOT NULL DEFAULT 1);
-    CREATE TABLE IF NOT EXISTS queue(player INTEGER PRIMARY KEY REFERENCES players(id),joined INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS matches(id INTEGER PRIMARY KEY,a INTEGER NOT NULL REFERENCES players(id),b INTEGER NOT NULL REFERENCES players(id),
-      status TEXT NOT NULL DEFAULT 'pending',winner INTEGER REFERENCES players(id),delta INTEGER,
-      rating_a INTEGER NOT NULL,rating_b INTEGER NOT NULL,created INTEGER NOT NULL,finished INTEGER);`);
-  if(!db.prepare('PRAGMA table_info(players)').all().some(column=>column.name==='active'))
-    db.exec('ALTER TABLE players ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+  try { db.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;'); migrate(db,clock); }
+  catch(error){db.close();throw error;}
   const transaction=fn=>{db.exec('BEGIN IMMEDIATE');try{const value=fn();db.exec('COMMIT');return value;}catch(error){db.exec('ROLLBACK');throw error;}};
   const player=id=>{const p=db.prepare('SELECT * FROM players WHERE id=?').get(positiveId(id));if(!p)throw new HttpError(404,'Player not found.');return p;};
   const match=id=>{const m=db.prepare('SELECT * FROM matches WHERE id=?').get(positiveId(id));if(!m)throw new HttpError(404,'Match not found.');return m;};
+  const seasons=createSeasons(db,clock,transaction);
   const active=id=>db.prepare("SELECT 1 FROM matches WHERE status='pending' AND (a=? OR b=?)").get(id,id);
   return {
-    close:()=>db.close(),player,match,
+    close:()=>db.close(),player,match,...seasons,
     register(name){
       name=text(name,32);
       if(db.prepare('SELECT 1 FROM players WHERE name=? COLLATE NOCASE').get(name))throw new HttpError(409,'That player name is already registered.');
@@ -49,7 +45,7 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
     make(){return transaction(()=>{
       const now=clock(),matches=[];
       for(const {a,b} of selectPairs(this.queue(),now)){
-        const id=Number(db.prepare('INSERT INTO matches(a,b,rating_a,rating_b,created) VALUES(?,?,?,?,?)').run(a.id,b.id,a.rating,b.rating,now).lastInsertRowid);
+        const id=Number(db.prepare('INSERT INTO matches(a,b,rating_a,rating_b,created,season_id) VALUES(?,?,?,?,?,?)').run(a.id,b.id,a.rating,b.rating,now,seasons.currentSeason().id).lastInsertRowid);
         db.prepare('DELETE FROM queue WHERE player IN (?,?)').run(a.id,b.id);
         matches.push(match(id));
       }

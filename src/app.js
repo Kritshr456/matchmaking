@@ -1,6 +1,8 @@
 import { createServer, positiveId } from './http.js';
 export function createApp(store,token){
   return createServer({token,publicDir:new URL('../public/',import.meta.url),route(method,path,body){
+    if(method==='GET'&&path==='/api/seasons')return {current:store.currentSeason(),rows:store.seasons()};
+    if(method==='POST'&&path==='/api/seasons')return store.startSeason(body.name,body.expectedSeasonId);
     if(method==='GET'&&path==='/api/players')return store.rankings();
     if(method==='GET'&&path==='/api/players/inactive')return store.inactive();
     if(method==='POST'&&path==='/api/players')return store.register(body.name);

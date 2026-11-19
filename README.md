@@ -123,3 +123,17 @@ ignored by Git. The dashboard disables action buttons while a request is pending
 Oversized declared request bodies are rejected from their headers before upload
 bytes are accepted. Streaming bodies remain limited to 16 KB. A 413 response
 explicitly closes the connection rather than advertising reuse for an unfinished upload.
+
+## Seasons
+
+GET `/api/seasons` returns the current season and season directory. POST
+`/api/seasons` with `{ "name": "Summer ladder", "expectedSeasonId": 1 }` archives
+the current standings and starts a new season. The queue must be empty and all
+pending matches resolved. Ratings restart at 1000 and season W/L/D counters reset;
+player IDs, inactive flags and all match history remain intact. Stale rollover
+requests are rejected instead of opening a second empty season.
+
+Back up before upgrading. Existing leagues are imported into Season 1 without
+changing their ratings or results. Their original season start date is unknown
+and is left unset. The schema migration is transactional. Restore a pre-upgrade
+backup to run an older release against the same data.

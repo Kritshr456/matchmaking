@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add transactional season rollover with archived standings, preserved player availability and stale-request protection.
+- Automatically import existing leagues without resetting ratings or inventing a legacy start date.
+
 ## 1.1.2
 
 - Reject oversized Content-Length headers before accepting uploads, and explicitly close connections after streaming-limit rejections.
