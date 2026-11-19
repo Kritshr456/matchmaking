@@ -5,6 +5,7 @@ import { HttpError, text, positiveId } from './http.js';
 import { selectPairs } from './pairing.js';
 import { migrate } from './migrations.js';
 import { createSeasons } from './seasons.js';
+import { createLeagueQueries } from './league-queries.js';
 export function ratingChange(a,b,score){
   return Math.round(32*(score-1/(1+10**((b-a)/400))));
 }
@@ -19,7 +20,7 @@ export function openStore(path=':memory:',clock=()=>Date.now()){
   const seasons=createSeasons(db,clock,transaction);
   const active=id=>db.prepare("SELECT 1 FROM matches WHERE status='pending' AND (a=? OR b=?)").get(id,id);
   return {
-    close:()=>db.close(),player,match,...seasons,
+    close:()=>db.close(),player,match,...seasons,...createLeagueQueries(db,clock,{player,...seasons}),
     register(name){
       name=text(name,32);
       if(db.prepare('SELECT 1 FROM players WHERE name=? COLLATE NOCASE').get(name))throw new HttpError(409,'That player name is already registered.');

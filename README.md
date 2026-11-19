@@ -137,3 +137,15 @@ Back up before upgrading. Existing leagues are imported into Season 1 without
 changing their ratings or results. Their original season start date is unknown
 and is left unset. The schema migration is transactional. Restore a pre-upgrade
 backup to run an older release against the same data.
+
+## League query endpoints
+
+All require the operator token. GET `/api/overview` returns current-season counts,
+queue waits, top players, recent matches and seven days of result activity.
+GET `/api/standings?season=current&q=Alice&page=1&inactive=false` searches literal
+name fragments and retains overall ranking positions. Pages contain 20 rows;
+closed seasons use their saved snapshots. GET `/api/matches/history` accepts
+`season=current|all|<id>`, `status=all|pending|completed|cancelled`, `player=<id>`
+and `page`. GET `/api/profiles/:id?page=1` returns current stats, lifetime W/L/D,
+season records, the latest 30 current-season rating results and paginated history.
+Legacy API endpoints continue to work.

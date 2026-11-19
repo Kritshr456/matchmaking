@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add searchable, paginated season standings, filtered match history, player profiles and league overview metrics.
+
 - Add transactional season rollover with archived standings, preserved player availability and stale-request protection.
 - Automatically import existing leagues without resetting ratings or inventing a legacy start date.
 

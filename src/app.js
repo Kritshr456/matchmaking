@@ -1,6 +1,21 @@
-import { createServer, positiveId } from './http.js';
+import { createServer, positiveId, HttpError } from './http.js';
 export function createApp(store,token){
-  return createServer({token,publicDir:new URL('../public/',import.meta.url),route(method,path,body){
+  return createServer({token,publicDir:new URL('../public/',import.meta.url),route(method,path,body,query){
+    const page=()=>positiveId(query.get('page')||'1');
+    const selectedSeason=(all=false)=>{
+      const value=query.get('season');
+      if(all&&value==='all')return null;
+      return !value||value==='current'?store.currentSeason().id:positiveId(value);
+    };
+    if(method==='GET'&&path==='/api/overview')return store.overview();
+    if(method==='GET'&&path==='/api/standings'){
+      const inactive=query.get('inactive')||'false';
+      if(!['true','false'].includes(inactive))throw new HttpError(400,'inactive must be true or false.');
+      return store.standings({seasonId:selectedSeason(),q:query.get('q')||'',includeInactive:inactive==='true',page:page()});
+    }
+    if(method==='GET'&&path==='/api/matches/history')return store.matchHistory({seasonId:selectedSeason(true),status:query.get('status')||'all',playerId:query.has('player')?positiveId(query.get('player')):null,page:page()});
+    const profile=path.match(/^\/api\/profiles\/(\d+)$/);
+    if(method==='GET'&&profile)return store.profile(positiveId(profile[1]),page());
     if(method==='GET'&&path==='/api/seasons')return {current:store.currentSeason(),rows:store.seasons()};
     if(method==='POST'&&path==='/api/seasons')return store.startSeason(body.name,body.expectedSeasonId);
     if(method==='GET'&&path==='/api/players')return store.rankings();

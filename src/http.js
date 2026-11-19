@@ -50,7 +50,7 @@ export function createServer({token,route,publicDir}){
         try{body=JSON.parse(Buffer.concat(chunks).toString('utf8')||'{}');}catch{throw new HttpError(400,'Invalid JSON.');}
         if(!body||Array.isArray(body)||typeof body!=='object')throw new HttpError(400,'Expected a JSON object.');
       }
-      const result=await route(req.method,url.pathname,body);
+      const result=await route(req.method,url.pathname,body,url.searchParams);
       if(result===undefined)throw new HttpError(404,'Route not found.');
       send(200,result);
     }catch(error){
